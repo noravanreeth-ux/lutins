@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Le calendrier de l'avent des Lutins de Sourcieux-les-Mines </title>
+  <style>
+    :root{
+      --bg:#0f1e12; --card:#383c3c; --accent:#0f1e12; --glass: #fcfcfc);
+      --glass-2: #fcfcfc);
+      --radius:16px;
+      --gap:12px;
+      color-scheme: dark;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#07160b 0%, rgb(7, 35, 19) 60%);color:#fcfcfc}
+    .wrap{max-width:1100px;margin:28px auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .controls{display:flex;gap:12px;align-items:center}
+    button, .toggle{background:var(--glass);border:0;padding:8px 12px;border-radius:10px;color:inherit;cursor:pointer}
+    .toggle{display:inline-flex;gap:8px;align-items:center}
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:var(--gap);
+    }
+
+    .door{
+      position:relative;
+      aspect-ratio:1/1;
+      border-radius:12px;
+      background:linear-gradient(180deg,var(--card), ##07160b);
+      display:flex;align-items:center;justify-content:center;
+      box-shadow: 0 6px 18px rgba(3,8,20,0.6), inset 0 -3px 6px rgba(0,0,0,0.35);
+      overflow:hidden;cursor:pointer;user-select:none;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .door:hover{transform:translateY(-6px);box-shadow:0 12px 28px rgb(2, 29, 10)}
+    .door .num{
+      position:absolute;right:12px;top:12px;background:var(--glass-2);padding:6px 8px;border-radius:8px;font-weight:700;font-size:14px
+    }
+    .door .label{font-weight:800;font-size:18px;letter-spacing:.8px}
+    .door.locked::after{
+      content:"🔒";position:absolute;left:10px;bottom:10px;font-size:18px;opacity:.9}
+
+    /* modal */
+    .backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;background:linear-gradient(90deg, rgb(2, 39, 23), rgb(2, 21, 13));z-index:60}
+    .backdrop.open{display:flex}
+    .modal{width:min(1000px,calc(100% - 40px));max-height:90vh;background:var(--card);border-radius:12px;padding:16px;box-shadow:0 30px 60px rgb(2, 39, 23);display:flex;flex-direction:column}
+    .modal .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .modal .title{font-weight:800}
+    .close{background:transparent;border:0;color:inherit;font-size:20px;cursor:pointer}
+    .media{
+      background:#000;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;height:0;padding-bottom:56.25%;position:relative
+    }
+    .media iframe, .media video{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+    footer{margin-top:16px;display:flex;gap:12px;align-items:center;justify-content:center;color:#fcfcfc;font-size:13px}
+
+    @media (max-width:880px){.grid{grid-template-columns:repeat(4,1fr)}}
+    @media (max-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Le calendrier de l'avent des Lutins de Sourcieux-les-Mines</h1>
+
+      <div class="controls">
+        <button id="reset">Réinitialiser</button>
+        <label class="toggle" title="Mode déverrouillage (utile pour tests)"><input id="admin" type="checkbox" style="display:none"><span id="adminLabel">Mode test</span></label>
+      </div>
+    </header>
+
+    <main>
+      <section class="grid" id="grid"></section>
+    </main>
+
+    <footer><h1> Ne ratez aucune de leurs bêtises! <h1></footer>
+  </div>
+
+  <!-- modal -->
+  <div id="backdrop" class="backdrop" role="dialog" aria-hidden="true">
+    <div class="modal" role="document">
+      <div class="head">
+        <div class="title" id="modalTitle">Jour</div>
+        <div>
+          <button class="close" id="closeBtn" aria-label="Fermer">✖</button>
+        </div>
+      </div>
+      <div class="media" id="mediaContainer" aria-live="polite"></div>
+      <div style="margin-top:8px;display:flex;justify-content:flex-end;gap:8px">
+        <button id="download" style="display:none">Télécharger</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------
+    // CONFIG: Remplacez les sources ici.
+    // support: type 'mp4' pour <video> ou 'youtube' pour un id/URL YouTube
+    // exemple: videosByDay[1] = {type: 'youtube', src: 'dQw4w9WgXcQ'} ou {type:'mp4', src:'https://.../video.mp4'}
+    const videosByDay = {
+      1: {type: 'mp4', src: 'https://www.dropbox.com/scl/fi/u250lasvb9irwjpqzoz4w/lutins-qui-plongent-dans-lavabo.mp4?rlkey=0djrpn6lj2lnieh3dse2jfm7c&st=8el0b5nm&dl=1', title: "Lorsque personne n'est à la mairie, les lutins se baignent dans les lavabos !"},
+      2: {type: 'mp4', src: 'https://www.dropbox.com/scl/fi/qa668j8r47gpfs4fff3js/extincteur.mp4?rlkey=y7g5vn77rnb9upq0als1tjgue&st=rc3bndc4&dl=1', title: "Soirée mousse à la mairie : les lutins sont des farceurs !"},
+	3: {type: 'mp4', src: 'https://www.dropbox.com/scl/fi/tgm2pdeu0kgmg3ubsp6uf/lutin-au-bassin-avec-canard-de-salle-de-bain.mp4?rlkey=fh4sv3np39k1pl9mtxcv3wcc5&st=3ggjk5sq&dl=1', title: "Les lutins transforment le bassin de la Falconnière en baignoire géante"},
+      // 3: {type:'mp4', src:'https://www.youtube.com/watch?v=oIeZWL9Lsm0', title:'...'},
+      // remplissez jusqu'à 24
+    };
+    // ----------------------------- 
+
+    const grid = document.getElementById('grid');
+    const backdrop = document.getElementById('backdrop');
+    const mediaContainer = document.getElementById('mediaContainer');
+    const modalTitle = document.getElementById('modalTitle');
+    const closeBtn = document.getElementById('closeBtn');
+    const adminCheckbox = document.getElementById('admin');
+    const adminLabel = document.getElementById('adminLabel');
+    const resetBtn = document.getElementById('reset');
+    const downloadBtn = document.getElementById('download');
+
+    // create 24 doors
+    function createDoors(){
+      for(let day=1; day<=24; day++){
+        const el = document.createElement('button');
+        el.className = 'door';
+        el.setAttribute('data-day', day);
+        const num = document.createElement('div'); num.className = 'num'; num.textContent = day;
+        const label = document.createElement('div'); label.className='label'; label.textContent = 'Surprise';
+        el.appendChild(num);
+        el.appendChild(label);
+        el.addEventListener('click', onDoorClick);
+        grid.appendChild(el);
+      }
+    }
+
+    function onDoorClick(e){
+      const day = Number(e.currentTarget.dataset.day);
+      const now = new Date();
+      const todayMonth = now.getMonth(); // 0-indexed
+      const todayDate = now.getDate();
+      const isAdmin = adminCheckbox.checked;
+      // unlock policy: available if current month is december (12) and day <= date, OR admin mode enabled
+      const unlocked = isAdmin || (todayMonth === 11 && day <= todayDate);
+      if(!unlocked){
+        // simple locked animation
+        e.currentTarget.classList.add('locked');
+        setTimeout(()=>e.currentTarget.classList.remove('locked'),600);
+        alert("Désolé, cette case n'est pas encore accessible, un peu de patience !");
+        return;
+      }
+      openModal(day);
+    }
+
+    function openModal(day){
+      const def = videosByDay[day];
+      modalTitle.textContent = `Jour ${day}` + (def && def.title ? ` — ${def.title}`: '');
+      mediaContainer.innerHTML = '';
+      downloadBtn.style.display = 'none';
+
+      if(!def){
+        // placeholder message
+        const p = document.createElement('div'); p.style.padding='20px'; p.style.color='#cfe6ff'; p.innerHTML = '<strong>Aucune vidéo configurée pour ce jour.</strong><br>Éditez la variable <code>videosByDay</code> dans le script pour ajouter une vidéo.';
+        mediaContainer.appendChild(p);
+      } else if(def.type === 'mp4'){
+        const v = document.createElement('video'); v.controls = true; v.src = def.src; v.setAttribute('playsinline',''); v.autoplay = true;
+        mediaContainer.appendChild(v);
+        downloadBtn.style.display = 'inline-block';
+        downloadBtn.onclick = ()=> window.open(def.src, '_blank');
+      } else if(def.type === 'youtube'){
+        // accept either an id or full url
+        let id = def.src;
+        if(def.src.includes('youtube') || def.src.includes('youtu.be')){
+          // try to extract id
+          const match = def.src.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{8,})/);
+          if(match) id = match[1];
+        }
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${id}?rel=0&autoplay=1`;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+        mediaContainer.appendChild(iframe);
+      } else {
+        const p = document.createElement('div'); p.style.padding='20px'; p.innerHTML = '<strong>Type de média inconnu.</strong>';
+        mediaContainer.appendChild(p);
+      }
+
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal(){
+      // stop any playing media
+      const vid = mediaContainer.querySelector('video');
+      if(vid){ try{vid.pause(); vid.currentTime = 0;}catch(e){} }
+      mediaContainer.innerHTML = '';
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    // init
+    createDoors();
+
+    // close handlers
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeModal(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+    // admin toggle label behavior
+    adminCheckbox.addEventListener('change', ()=>{ adminLabel.textContent = adminCheckbox.checked ? 'Mode test (ON)' : 'Mode test'; });
+
+    resetBtn.addEventListener('click', ()=>{
+      if(confirm('Réinitialiser le calendrier affiché ? (aucune donnée n\'est persistée)')){
+        location.reload();
+      }
+    });
+
+    // expose for debugging in console if needed
+    window.videosByDay = videosByDay;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+  </script>
+</body>
+</html>
