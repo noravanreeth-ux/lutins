@@ -40,9 +40,9 @@
     }
     .door:hover{transform:translateY(-6px);box-shadow:0 12px 28px rgb(2, 29, 10)}
     .door .num{
-      position:absolute;right:12px;top:12px;background:var(--glass-2);padding:6px 8px;border-radius:8px;font-weight:700;font-size:14px
+      position:absolute;right:12px;top:12px;background:var(--glass-2);padding:6px 8px;border-radius:8px;font-weight:700;font-size:18px
     }
-    .door .label{font-weight:800;font-size:18px;letter-spacing:.8px}
+    .door .label{font-weight:800;font-size:14px;letter-spacing:.8px}
     .door.locked::after{
       content:"🔒";position:absolute;left:10px;bottom:10px;font-size:18px;opacity:.9}
 
@@ -154,7 +154,7 @@
         el.className = 'door';
         el.setAttribute('data-day', day);
         const num = document.createElement('div'); num.className = 'num'; num.textContent = day;
-        const label = document.createElement('div'); label.className='label'; label.textContent = 'Surprise';
+        const label = document.createElement('div'); label.className='label'; label.textContent = 'Les bêtises des lutins';
         el.appendChild(num);
         el.appendChild(label);
         el.addEventListener('click', onDoorClick);
