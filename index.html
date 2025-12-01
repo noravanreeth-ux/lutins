@@ -231,6 +231,13 @@
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
 
     // admin toggle label behavior
+    adminCheckbox.addEventListener('change', ()=>{ adminLabel.textContent = adminCheckbox.checked ? 'Mode test (ON)' : 'Mode test'; });
+
+    resetBtn.addEventListener('click', ()=>{
+      if(confirm('Réinitialiser le calendrier affiché ? (aucune donnée n\'est persistée)')){
+        location.reload();
+      }
+    });
 
 
     // expose for debugging in console if needed
